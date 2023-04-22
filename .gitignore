@@ -35,3 +35,6 @@ FMT.build
 Makefile
 run-msbuild.bat
 fmt.pc
+
+zig-cache/
+zig-out/
