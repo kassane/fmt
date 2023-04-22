@@ -1,3 +1,6 @@
+//! fmtlib for Zig Package Manager (MVP)
+//! Download [Zig v0.11 or higher](https://ziglang.org/download)
+
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
@@ -5,10 +8,19 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     // Options
-    // const shared = b.option(bool, "Shared", "Build the Shared Library [default: false]") orelse false;
+    const shared = b.option(bool, "Shared", "Build the Shared Library [default: false]") orelse false;
     const tests = b.option(bool, "Tests", "Build tests [default: false]") orelse false;
 
-    const lib = b.addStaticLibrary(.{
+    const lib = if (shared) b.addSharedLibrary(.{
+        .name = "fmt",
+        .target = target,
+        .optimize = optimize,
+        .version = .{
+            .major = 10,
+            .minor = 0,
+            .patch = 0,
+        },
+    }) else b.addStaticLibrary(.{
         .name = "fmt",
         .target = target,
         .optimize = optimize,
@@ -22,7 +34,7 @@ pub fn build(b: *std.Build) void {
         lib.bundle_compiler_rt = true
     else
         lib.strip = true;
-    lib.linkLibCpp(); // static-linking LLVM-libcxx
+    lib.linkLibCpp(); // static-linking LLVM-libcxx (all platforms)
 
     b.installArtifact(lib);
     b.installDirectory(.{
@@ -32,6 +44,10 @@ pub fn build(b: *std.Build) void {
     });
 
     if (tests) {
+        buildTest(b, .{
+            .lib = lib,
+            .path = "test/args-test.cc",
+        });
         buildTest(b, .{
             .lib = lib,
             .path = "test/core-test.cc",
@@ -82,8 +98,29 @@ pub fn build(b: *std.Build) void {
         });
         buildTest(b, .{
             .lib = lib,
+            .path = "test/compile-fp-test.cc",
+        });
+        buildTest(b, .{
+            .lib = lib,
             .path = "test/format-test.cc",
         });
+        buildTest(b, .{
+            .lib = lib,
+            .path = "test/os-test.cc",
+        });
+        buildTest(b, .{
+            .lib = lib,
+            .path = "test/noexception-test.cc",
+        });
+        buildTest(b, .{
+            .lib = lib,
+            .path = "test/posix-mock-test.cc",
+        });
+        // don't work
+        // buildTest(b, .{
+        //     .lib = lib,
+        //     .path = "test/module-test.cc",
+        // });
     }
 }
 
@@ -96,19 +133,14 @@ fn buildTest(b: *std.Build, info: BuildInfo) void {
     test_exe.addIncludePath("include");
     test_exe.addIncludePath("test");
     test_exe.addIncludePath("test/gtest");
-    test_exe.addCSourceFile(info.path, &.{
+    test_exe.addCSourceFile(info.path, &.{});
+    test_exe.addCSourceFiles(test_src, &.{
         "-Wall",
         "-Wextra",
         "-Wno-deprecated-declarations",
     });
     test_exe.defineCMacro("_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING", "1");
     test_exe.defineCMacro("GTEST_HAS_PTHREAD", "0");
-    test_exe.addCSourceFiles(&.{
-        "test/gtest/gmock-gtest-all.cc",
-        "test/gtest-extra.cc",
-        "test/test-main.cc",
-        "test/util.cc",
-    }, &.{});
     test_exe.linkLibrary(info.lib);
     test_exe.linkLibCpp();
     b.installArtifact(test_exe);
@@ -126,9 +158,15 @@ fn buildTest(b: *std.Build, info: BuildInfo) void {
     run_step.dependOn(&run_cmd.step);
 }
 
-const src = &.{
+const src: []const []const u8 = &.{
     "src/format.cc",
     "src/os.cc",
+};
+const test_src: []const []const u8 = &.{
+    "test/gtest/gmock-gtest-all.cc",
+    "test/gtest-extra.cc",
+    "test/enforce-checks-test.cc",
+    "test/util.cc",
 };
 
 const BuildInfo = struct {
