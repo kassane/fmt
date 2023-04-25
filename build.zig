@@ -35,13 +35,12 @@ pub fn build(b: *std.Build) void {
     else
         lib.strip = true;
     lib.linkLibCpp(); // static-linking LLVM-libcxx (all platforms)
-
-    b.installArtifact(lib);
-    b.installDirectory(.{
+    lib.installHeadersDirectoryOptions(.{
         .source_dir = "include",
         .install_dir = .header,
         .install_subdir = "",
     });
+    b.installArtifact(lib);
 
     if (tests) {
         buildTest(b, .{
