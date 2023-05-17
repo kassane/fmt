@@ -291,6 +291,7 @@ struct monostate {
 #  define FMT_ENABLE_IF(...) fmt::enable_if_t<(__VA_ARGS__), int> = 0
 #endif
 
+// This is defined in core.h instead of format.h to avoid injecting in std.
 #ifdef __cpp_lib_byte
 inline auto format_as(std::byte b) -> unsigned char {
   return static_cast<unsigned char>(b);
@@ -2703,8 +2704,8 @@ FMT_FORMAT_AS(signed char, int);
 FMT_FORMAT_AS(unsigned char, unsigned);
 FMT_FORMAT_AS(short, int);
 FMT_FORMAT_AS(unsigned short, unsigned);
-FMT_FORMAT_AS(long, long long);
-FMT_FORMAT_AS(unsigned long, unsigned long long);
+FMT_FORMAT_AS(long, detail::long_type);
+FMT_FORMAT_AS(unsigned long, detail::ulong_type);
 FMT_FORMAT_AS(Char*, const Char*);
 FMT_FORMAT_AS(std::basic_string<Char>, basic_string_view<Char>);
 FMT_FORMAT_AS(std::nullptr_t, const void*);
