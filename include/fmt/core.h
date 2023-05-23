@@ -241,12 +241,6 @@
 #  endif
 #endif
 
-#if defined __cpp_inline_variables && __cpp_inline_variables >= 201606L
-#  define FMT_INLINE_VARIABLE inline
-#else
-#  define FMT_INLINE_VARIABLE
-#endif
-
 // Enable minimal optimizations for more compact code in debug mode.
 FMT_GCC_PRAGMA("GCC push_options")
 #if !defined(__OPTIMIZE__) && !defined(__NVCOMPILER) && !defined(__LCC__) && \
@@ -1547,8 +1541,7 @@ constexpr auto encode_types() -> unsigned long long {
 
 template <bool PACKED, typename Context, typename T, FMT_ENABLE_IF(PACKED)>
 FMT_CONSTEXPR FMT_INLINE auto make_arg(T& val) -> value<Context> {
-  auto&& arg = arg_mapper<Context>().map(val);
-  using arg_type = remove_cvref_t<decltype(arg)>;
+  using arg_type = remove_cvref_t<decltype(arg_mapper<Context>().map(val))>;
 
   constexpr bool formattable_char =
       !std::is_same<arg_type, unformattable_char>::value;
@@ -1567,7 +1560,7 @@ FMT_CONSTEXPR FMT_INLINE auto make_arg(T& val) -> value<Context> {
       formattable,
       "Cannot format an argument. To make type T formattable provide a "
       "formatter<T> specialization: https://fmt.dev/latest/api.html#udt");
-  return {arg};
+  return {arg_mapper<Context>().map(val)};
 }
 
 template <typename Context, typename T>
@@ -2543,8 +2536,6 @@ FMT_CONSTEXPR auto check_char_specs(const format_specs<Char>& specs) -> bool {
   return true;
 }
 
-constexpr FMT_INLINE_VARIABLE int invalid_arg_index = -1;
-
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
 template <int N, typename T, typename... Args, typename Char>
 constexpr auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
@@ -2554,7 +2545,7 @@ constexpr auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
   if constexpr (sizeof...(Args) > 0)
     return get_arg_index_by_name<N + 1, Args...>(name);
   (void)name;  // Workaround an MSVC bug about "unused" parameter.
-  return invalid_arg_index;
+  return -1;
 }
 #endif
 
@@ -2565,7 +2556,7 @@ FMT_CONSTEXPR auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
     return get_arg_index_by_name<0, Args...>(name);
 #endif
   (void)name;
-  return invalid_arg_index;
+  return -1;
 }
 
 template <typename Char, typename... Args> class format_string_checker {
@@ -2598,7 +2589,7 @@ template <typename Char, typename... Args> class format_string_checker {
   FMT_CONSTEXPR auto on_arg_id(basic_string_view<Char> id) -> int {
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
     auto index = get_arg_index_by_name<Args...>(id);
-    if (index == invalid_arg_index) on_error("named argument is not found");
+    if (index < 0) on_error("named argument is not found");
     return index;
 #else
     (void)id;
@@ -2690,15 +2681,9 @@ struct formatter<T, Char,
       -> decltype(ctx.out());
 };
 
-#define FMT_FORMAT_AS(Type, Base)                                        \
-  template <typename Char>                                               \
-  struct formatter<Type, Char> : formatter<Base, Char> {                 \
-    template <typename FormatContext>                                    \
-    auto format(Type const& val, FormatContext& ctx) const               \
-        -> decltype(ctx.out()) {                                         \
-      return formatter<Base, Char>::format(static_cast<Base>(val), ctx); \
-    }                                                                    \
-  }
+#define FMT_FORMAT_AS(Type, Base) \
+  template <typename Char>        \
+  struct formatter<Type, Char> : formatter<Base, Char> {}
 
 FMT_FORMAT_AS(signed char, int);
 FMT_FORMAT_AS(unsigned char, unsigned);
