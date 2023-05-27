@@ -3347,8 +3347,9 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
     //   10^(exp - 1) <= value < 10^exp or 10^exp <= value < 10^(exp + 1).
     // This is based on log10(value) == log2(value) / log2(10) and approximation
     // of log2(value) by e + num_fraction_bits idea from double-conversion.
-    exp = static_cast<int>(
-        std::ceil((f.e + count_digits<1>(f.f) - 1) * inv_log2_10 - 1e-10));
+    auto e = (f.e + count_digits<1>(f.f) - 1) * inv_log2_10 - 1e-10;
+    exp = static_cast<int>(e);
+    if (e > exp) ++exp;  // Compute ceil.
     dragon_flags = dragon::fixup;
   } else if (precision < 0) {
     // Use Dragonbox for the shortest format.
@@ -4103,8 +4104,8 @@ class format_int {
 
 template <typename T, typename Char>
 struct formatter<T, Char, enable_if_t<detail::has_format_as<T>::value>>
-    : private formatter<detail::format_as_t<T>> {
-  using base = formatter<detail::format_as_t<T>>;
+    : private formatter<detail::format_as_t<T>, Char> {
+  using base = formatter<detail::format_as_t<T>, Char>;
   using base::parse;
 
   template <typename FormatContext>
