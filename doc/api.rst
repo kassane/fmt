@@ -17,6 +17,7 @@ The {fmt} library API consists of the following parts:
 * :ref:`fmt/color.h <color-api>`: terminal color and text style
 * :ref:`fmt/os.h <os-api>`: system APIs
 * :ref:`fmt/ostream.h <ostream-api>`: ``std::ostream`` support
+* :ref:`fmt/args.h <args-api>`: dynamic argument lists
 * :ref:`fmt/printf.h <printf-api>`: ``printf`` formatting
 * :ref:`fmt/xchar.h <xchar-api>`: optional ``wchar_t`` support 
 
@@ -292,9 +293,6 @@ times and reduces binary code size compared to a fully parameterized version.
 .. doxygenclass:: fmt::format_arg_store
    :members:
 
-.. doxygenclass:: fmt::dynamic_format_arg_store
-   :members:
-
 .. doxygenclass:: fmt::basic_format_args
    :members:
 
@@ -310,6 +308,17 @@ times and reduces binary code size compared to a fully parameterized version.
    :members:
 
 .. doxygentypedef:: fmt::format_context
+
+.. _args-api:
+
+Dynamic Argument Lists
+----------------------
+
+The header ``fmt/args.h`` provides ``dynamic_format_arg_store``, a builder-like
+API that can be used to construct format argument lists dynamically.
+
+.. doxygenclass:: fmt::dynamic_format_arg_store
+   :members:
 
 Compatibility
 -------------
@@ -616,7 +625,7 @@ the POSIX extension for positional arguments. Unlike their standard
 counterparts, the ``fmt`` functions are type-safe and throw an exception if an
 argument type doesn't match its format specification.
 
-.. doxygenfunction:: printf(const S &format_str, const T&... args)
+.. doxygenfunction:: printf(string_view fmt, const T&... args)
 
 .. doxygenfunction:: fprintf(std::FILE *f, const S &fmt, const T&... args) -> int
 
