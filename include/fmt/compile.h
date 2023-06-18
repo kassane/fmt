@@ -196,7 +196,8 @@ template <typename Char> struct code_unit {
 
   template <typename OutputIt, typename... Args>
   constexpr OutputIt format(OutputIt out, const Args&...) const {
-    return write<Char>(out, value);
+    *out++ = value;
+    return out;
   }
 };
 
@@ -220,7 +221,12 @@ template <typename Char, typename T, int N> struct field {
 
   template <typename OutputIt, typename... Args>
   constexpr OutputIt format(OutputIt out, const Args&... args) const {
-    return write<Char>(out, get_arg_checked<T, N>(args...));
+    const T& arg = get_arg_checked<T, N>(args...);
+    if constexpr (std::is_convertible_v<T, basic_string_view<Char>>) {
+      auto s = basic_string_view<Char>(arg);
+      return copy_str<Char>(s.begin(), s.end(), out);
+    }
+    return write<Char>(out, arg);
   }
 };
 
