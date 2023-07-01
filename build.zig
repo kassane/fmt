@@ -36,7 +36,7 @@ pub fn build(b: *std.Build) void {
         lib.strip = true;
     lib.linkLibCpp(); // static-linking LLVM-libcxx (all platforms)
     lib.installHeadersDirectoryOptions(.{
-        .source_dir = "include",
+        .source_dir = .{.path = "include"},
         .install_dir = .header,
         .install_subdir = "",
     });
