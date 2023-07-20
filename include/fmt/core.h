@@ -836,10 +836,8 @@ template <typename T> class buffer {
   /** Returns the capacity of this buffer. */
   constexpr auto capacity() const noexcept -> size_t { return capacity_; }
 
-  /** Returns a pointer to the buffer data. */
+  /** Returns a pointer to the buffer data (not null-terminated). */
   FMT_CONSTEXPR auto data() noexcept -> T* { return ptr_; }
-
-  /** Returns a pointer to the buffer data. */
   FMT_CONSTEXPR auto data() const noexcept -> const T* { return ptr_; }
 
   /** Clears this buffer. */
@@ -2599,15 +2597,15 @@ template <typename Char, typename... Args> class format_string_checker {
   // needed for compile-time checks: https://godbolt.org/z/GvWzcTjh1.
   using parse_func = const Char* (*)(parse_context_type&);
 
+  type types_[num_args > 0 ? static_cast<size_t>(num_args) : 1];
   parse_context_type context_;
   parse_func parse_funcs_[num_args > 0 ? static_cast<size_t>(num_args) : 1];
-  type types_[num_args > 0 ? static_cast<size_t>(num_args) : 1];
 
  public:
   explicit FMT_CONSTEXPR format_string_checker(basic_string_view<Char> fmt)
-      : context_(fmt, num_args, types_),
-        parse_funcs_{&parse_format_specs<Args, parse_context_type>...},
-        types_{mapped_type_constant<Args, buffer_context<Char>>::value...} {}
+      : types_{mapped_type_constant<Args, buffer_context<Char>>::value...},
+        context_(fmt, num_args, types_),
+        parse_funcs_{&parse_format_specs<Args, parse_context_type>...} {}
 
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
 
@@ -2627,7 +2625,9 @@ template <typename Char, typename... Args> class format_string_checker {
 #endif
   }
 
-  FMT_CONSTEXPR void on_replacement_field(int, const Char*) {}
+  FMT_CONSTEXPR void on_replacement_field(int id, const Char* begin) {
+    on_format_specs(id, begin, begin);  // Call parse() on empty specs.
+  }
 
   FMT_CONSTEXPR auto on_format_specs(int id, const Char* begin, const Char*)
       -> const Char* {

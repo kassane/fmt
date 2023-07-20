@@ -1674,8 +1674,7 @@ TEST(format_test, format_custom) {
 
 TEST(format_test, format_to_custom) {
   char buf[10] = {};
-  auto end =
-      &*fmt::format_to(fmt::detail::make_checked(buf, 10), "{}", Answer());
+  auto end = fmt::format_to(buf, "{}", Answer());
   EXPECT_EQ(end, buf + 2);
   EXPECT_STREQ(buf, "42");
 }
@@ -2101,7 +2100,7 @@ struct check_back_appender {};
 
 FMT_BEGIN_NAMESPACE
 template <> struct formatter<check_back_appender> {
-  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
   }
 
