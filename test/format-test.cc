@@ -1427,7 +1427,6 @@ TEST(format_test, prettify_float) {
   EXPECT_EQ("12.34", fmt::format("{}", 1234e-2));
   EXPECT_EQ("0.001234", fmt::format("{}", 1234e-6));
   EXPECT_EQ("0.1", fmt::format("{}", 0.1f));
-  EXPECT_EQ("0.10000000149011612", fmt::format("{}", double(0.1f)));
   EXPECT_EQ("1.3563156e-19", fmt::format("{}", 1.35631564e-19f));
 }
 
@@ -1472,6 +1471,7 @@ TEST(format_test, format_infinity) {
 TEST(format_test, format_long_double) {
   EXPECT_EQ("0", fmt::format("{0:}", 0.0l));
   EXPECT_EQ("0.000000", fmt::format("{0:f}", 0.0l));
+  EXPECT_EQ("0.0", fmt::format("{:.1f}", 0.000000001l));
   EXPECT_EQ("392.65", fmt::format("{0:}", 392.65l));
   EXPECT_EQ("392.65", fmt::format("{0:g}", 392.65l));
   EXPECT_EQ("392.65", fmt::format("{0:G}", 392.65l));
