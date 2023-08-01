@@ -73,8 +73,8 @@ void write_escaped_path(basic_memory_buffer<Char>& quoted,
 
 #  ifdef _WIN32
 template <>
-auto get_path_string<char>(const std::filesystem::path& p) {
-  return to_utf8<wchar_t>(p.native());
+inline auto get_path_string<char>(const std::filesystem::path& p) {
+  return to_utf8<wchar_t>(p.native(), to_utf8_error_policy::replace);
 }
 
 template <>
