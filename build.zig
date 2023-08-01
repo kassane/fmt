@@ -134,7 +134,7 @@ fn buildTest(b: *std.Build, info: BuildInfo) void {
     test_exe.addIncludePath(Path.relative("include"));
     test_exe.addIncludePath(Path.relative("test"));
     test_exe.addIncludePath(Path.relative("test/gtest"));
-    test_exe.addCSourceFile(.{.file = Path.relative(info.path), .flags = &.{});
+    test_exe.addCSourceFile(.{.file = Path.relative(info.path), .flags = &.{}});
     test_exe.addCSourceFiles(test_src, &.{
         "-Wall",
         "-Wextra",
