@@ -2,6 +2,7 @@
 //! Download [Zig v0.11 or higher](https://ziglang.org/download)
 
 const std = @import("std");
+const Path = std.Build.LazyPath;
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -29,14 +30,15 @@ pub fn build(b: *std.Build) void {
         "-Wall",
         "-Wextra",
     });
-    lib.addIncludePath("include");
+    lib.addIncludePath(Path.relative("include"));
     if (optimize == .Debug or optimize == .ReleaseSafe)
         lib.bundle_compiler_rt = true
     else
         lib.strip = true;
+    lib.pie = true;
     lib.linkLibCpp(); // static-linking LLVM-libcxx (all platforms)
     lib.installHeadersDirectoryOptions(.{
-        .source_dir = .{.path = "include"},
+        .source_dir = Path.relative("include"),
         .install_dir = .header,
         .install_subdir = "",
     });
@@ -129,10 +131,10 @@ fn buildTest(b: *std.Build, info: BuildInfo) void {
         .optimize = info.lib.optimize,
         .target = info.lib.target,
     });
-    test_exe.addIncludePath("include");
-    test_exe.addIncludePath("test");
-    test_exe.addIncludePath("test/gtest");
-    test_exe.addCSourceFile(info.path, &.{});
+    test_exe.addIncludePath(Path.relative("include"));
+    test_exe.addIncludePath(Path.relative("test"));
+    test_exe.addIncludePath(Path.relative("test/gtest"));
+    test_exe.addCSourceFile(.{.file = Path.relative(info.path), .flags = &.{});
     test_exe.addCSourceFiles(test_src, &.{
         "-Wall",
         "-Wextra",
@@ -169,7 +171,7 @@ const test_src: []const []const u8 = &.{
 };
 
 const BuildInfo = struct {
-    lib: *std.Build.CompileStep,
+    lib: *std.Build.Step.Compile,
     path: []const u8,
 
     fn filename(self: BuildInfo) []const u8 {
