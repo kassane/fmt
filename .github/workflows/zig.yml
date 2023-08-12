@@ -21,7 +21,7 @@ jobs:
           - x86_64-macos
           - aarch64-macos
           - x86_64-windows
-          - x86_64-windows-msvc
+          # - x86_64-windows-msvc
           - x86-windows
           - aarch64-windows
 
