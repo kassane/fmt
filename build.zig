@@ -18,7 +18,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .version = .{
             .major = 10,
-            .minor = 0,
+            .minor = 1,
             .patch = 0,
         },
     }) else b.addStaticLibrary(.{
@@ -35,8 +35,12 @@ pub fn build(b: *std.Build) void {
         lib.bundle_compiler_rt = true
     else
         lib.strip = true;
-    lib.pie = true;
-    lib.linkLibCpp(); // static-linking LLVM-libcxx (all platforms)
+    if (lib.linkage == .static)
+        lib.pie = true;
+    if (target.getAbi() != .msvc)
+        lib.linkLibCpp() // static-linking LLVM-libcxx (all platforms)
+    else
+        lib.linkLibC();
     lib.installHeadersDirectoryOptions(.{
         .source_dir = Path.relative("include"),
         .install_dir = .header,
@@ -134,7 +138,7 @@ fn buildTest(b: *std.Build, info: BuildInfo) void {
     test_exe.addIncludePath(Path.relative("include"));
     test_exe.addIncludePath(Path.relative("test"));
     test_exe.addIncludePath(Path.relative("test/gtest"));
-    test_exe.addCSourceFile(.{.file = Path.relative(info.path), .flags = &.{}});
+    test_exe.addCSourceFile(.{ .file = Path.relative(info.path), .flags = &.{} });
     test_exe.addCSourceFiles(test_src, &.{
         "-Wall",
         "-Wextra",
@@ -143,7 +147,10 @@ fn buildTest(b: *std.Build, info: BuildInfo) void {
     test_exe.defineCMacro("_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING", "1");
     test_exe.defineCMacro("GTEST_HAS_PTHREAD", "0");
     test_exe.linkLibrary(info.lib);
-    test_exe.linkLibCpp();
+    if (test_exe.target.getAbi() != .msvc)
+        test_exe.linkLibCpp()
+    else
+        test_exe.linkLibC();
     b.installArtifact(test_exe);
 
     const run_cmd = b.addRunArtifact(test_exe);
